@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Pi Swap</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #6A0DAD;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+        }
+        .task {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .task button {
+            background-color: white;
+            color: #6A0DAD;
+            border: none;
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .task button:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+        .bottom-menu {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+        }
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 3px;
+            text-decoration: none;
+            position: relative;
+        }
+        .menu-btn i {
+            font-size: 22px;
+        }
+        .menu-btn.active::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background-color: white;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Tasks</h2>
+        <p>Complete tasks and earn points!</p>
+        <div class="task">
+            <span><i class="fab fa-telegram"></i> Join Telegram</span>
+            <button data-task="telegram" onclick="startTask(this)">Start Task</button>
+        </div>
+        <div class="task">
+            <span><i class="fab fa-twitter"></i> Follow on Twitter</span>
+            <button data-task="twitter" onclick="startTask(this)">Start Task</button>
+        </div>
+        <div class="task">
+            <span><i class="fab fa-youtube"></i> Subscribe on YouTube</span>
+            <button data-task="youtube" onclick="startTask(this)">Start Task</button>
+        </div>
+        <div class="task">
+            <span><i class="fab fa-facebook"></i> Like on Facebook</span>
+            <button data-task="facebook" onclick="startTask(this)">Start Task</button>
+        </div>
+    </div>
+
+    <div class="bottom-menu">
+        <a href="go:home" class="menu-btn"><i class="fas fa-home"></i> Home</a>
+        <a href="go:tasks" class="menu-btn active"><i class="fas fa-tasks"></i> Tasks</a>
+        <a href="go:friends" class="menu-btn"><i class="fas fa-user-friends"></i> Friends</a>
+        <a href="go:wallet" class="menu-btn"><i class="fas fa-wallet"></i> Wallet</a>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("button[data-task]").forEach(button => {
+                let task = button.getAttribute("data-task");
+                if (localStorage.getItem(task) === "completed") {
+                    button.innerText = "Claimed!";
+                    button.disabled = true;
+                }
+            });
+        });
+
+        function startTask(button) {
+            let task = button.getAttribute("data-task");
+            button.disabled = true;
+            button.innerText = "Waiting...";
+            setTimeout(() => {
+                button.innerText = "Claim";
+                button.disabled = false;
+                button.onclick = function () { claimPoints(this, task); };
+            }, 5000);
+        }
+
+        function claimPoints(button, task) {
+            let points = parseInt(localStorage.getItem("walletPoints")) || 0;
+            points += 5;
+            localStorage.setItem("walletPoints", points);
+            localStorage.setItem(task, "completed");
+            button.innerText = "Claimed!";
+            button.disabled = true;
+        }
+    </script>
+</body>
+</html>
