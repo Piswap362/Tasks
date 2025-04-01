@@ -1,142 +1,553 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tasks - Pi Swap</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
+        :root {
+            --pi-primary: #1EC0C0;  /* Pi Network teal */
+            --pi-secondary: #2ECC71; /* Pi Network green */
+            --pi-accent: #F39C12;   /* Pi Network orange */
+            --pi-dark: #1A3A4F;     /* Dark blue from Pi Network */
+            --pi-light: #E8F4F8;    /* Light background from Pi Network */
+            --text-light: #FFFFFF;
+            --text-dark: #2C3E50;   /* Dark text from Pi Network */
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #6A0DAD;
-            color: white;
+            background-color: var(--pi-dark);
+            color: var(--text-light);
             text-align: center;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, var(--pi-dark) 0%, var(--pi-primary) 100%);
         }
-        .container {
+        
+        .scroll-container {
             max-width: 400px;
-            margin: auto;
+            margin: 0 auto;
             padding: 20px;
+            padding-bottom: 80px;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
+        
+        h2 {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--pi-accent);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
         .task {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px solid rgba(30, 192, 192, 0.2);
+            transition: var(--transition);
+            backdrop-filter: blur(5px);
+        }
+        
+        .task:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .task i {
+            font-size: 20px;
+            margin-right: 10px;
+            color: var(--pi-accent);
+        }
+        
+        .task-content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .task-title {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            flex: 1;
         }
+        
+        .task-reward {
+            background: rgba(243, 156, 18, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--pi-primary), var(--pi-accent));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: left;
+        }
+        
         .task button {
-            background-color: white;
-            color: #6A0DAD;
+            background: linear-gradient(135deg, var(--pi-primary) 0%, var(--pi-accent) 100%);
+            color: var(--pi-dark);
             border: none;
-            padding: 8px 15px;
+            padding: 10px 15px;
             font-size: 14px;
-            border-radius: 5px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            width: 100%;
+            margin-top: 10px;
         }
+        
+        .task button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
         .task button:disabled {
-            background-color: gray;
+            background: rgba(30, 192, 192, 0.3);
             cursor: not-allowed;
+            color: var(--text-light);
         }
+        
         .bottom-menu {
             position: fixed;
             bottom: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            left: 0;
+            right: 0;
+            background: rgba(26, 58, 79, 0.9);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0;
+            padding: 15px 0;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(30, 192, 192, 0.3);
+            z-index: 1000;
+            max-width: 400px;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
+        
         .menu-btn {
             background: none;
             border: none;
-            color: white;
-            font-size: 18px;
+            color: var(--text-light);
+            font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             flex-direction: column;
-            gap: 3px;
+            gap: 5px;
             text-decoration: none;
             position: relative;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: var(--transition);
+            opacity: 0.7;
+            flex: 1;
         }
+        
+        .menu-btn:hover {
+            opacity: 1;
+            background: rgba(30, 192, 192, 0.1);
+        }
+        
         .menu-btn i {
-            font-size: 22px;
+            font-size: 20px;
         }
+        
+        .menu-btn.active {
+            opacity: 1;
+            font-weight: 600;
+        }
+        
         .menu-btn.active::after {
             content: "";
             position: absolute;
-            bottom: -5px;
+            bottom: -8px;
             left: 50%;
             transform: translateX(-50%);
-            width: 40px;
+            width: 30px;
             height: 3px;
-            background-color: white;
+            background-color: var(--pi-accent);
             border-radius: 3px;
+        }
+        
+        .info-text {
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+        
+        /* Points Counter */
+        .points-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .points-counter i {
+            color: var(--pi-accent);
+            margin-right: 5px;
+        }
+        
+        /* Animation for completed tasks */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .completed {
+            animation: pulse 1.5s infinite;
+            border-color: var(--pi-accent);
+        }
+        
+        /* Floating animation */
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        .floating-points {
+            position: absolute;
+            color: var(--pi-accent);
+            font-weight: bold;
+            animation: floatUp 1s forwards;
+            right: 20px;
+            bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Tasks</h2>
-        <p>Complete tasks and earn points!</p>
-        <div class="task">
-            <span><i class="fab fa-telegram"></i> Join Telegram</span>
-            <button data-task="telegram" onclick="startTask(this)">Start Task</button>
+    <div class="points-counter">
+        <i class="fas fa-coins"></i>
+        <span id="pointsDisplay">0</span> Pis
+    </div>
+
+    <div class="scroll-container">
+        <h2>Pi Swap Tasks</h2>
+        <p class="info-text">Complete tasks and earn Pi Swap rewards (Pis)!</p>
+        
+        <!-- Task 1 -->
+        <div class="task" id="task1">
+            <div class="task-content">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-ad"></i> Watch Ads (1/3)
+                    </div>
+                    <div class="task-reward">20 Pis</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress1"></div>
+                </div>
+                <div class="progress-text" id="progressText1">0/3 ads watched</div>
+                <button onclick="startTask('task1')">Watch Ad</button>
+            </div>
         </div>
-        <div class="task">
-            <span><i class="fab fa-twitter"></i> Follow on Twitter</span>
-            <button data-task="twitter" onclick="startTask(this)">Start Task</button>
+        
+        <!-- Task 2 -->
+        <div class="task" id="task2">
+            <div class="task-content">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-ad"></i> Watch Ads (1/3)
+                    </div>
+                    <div class="task-reward">20 Pis</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress2"></div>
+                </div>
+                <div class="progress-text" id="progressText2">0/3 ads watched</div>
+                <button onclick="startTask('task2')">Watch Ad</button>
+            </div>
         </div>
-        <div class="task">
-            <span><i class="fab fa-youtube"></i> Subscribe on YouTube</span>
-            <button data-task="youtube" onclick="startTask(this)">Start Task</button>
+        
+        <!-- Task 3 -->
+        <div class="task" id="task3">
+            <div class="task-content">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-ad"></i> Watch Ads (1/3)
+                    </div>
+                    <div class="task-reward">20 Pis</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress3"></div>
+                </div>
+                <div class="progress-text" id="progressText3">0/3 ads watched</div>
+                <button onclick="startTask('task3')">Watch Ad</button>
+            </div>
         </div>
-        <div class="task">
-            <span><i class="fab fa-facebook"></i> Like on Facebook</span>
-            <button data-task="facebook" onclick="startTask(this)">Start Task</button>
+        
+        <!-- Task 4 -->
+        <div class="task" id="task4">
+            <div class="task-content">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-ad"></i> Watch Ads (1/3)
+                    </div>
+                    <div class="task-reward">20 Pis</div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress4"></div>
+                </div>
+                <div class="progress-text" id="progressText4">0/3 ads watched</div>
+                <button onclick="startTask('task4')">Watch Ad</button>
+            </div>
         </div>
     </div>
 
     <div class="bottom-menu">
-        <a href="https://piswap362.github.io/Home/" class="menu-btn"><i class="fas fa-home"></i> Home</a>
-        <a href="https://piswap362.github.io/Tasks/" class="menu-btn active"><i class="fas fa-tasks"></i> Tasks</a>
-        <a href="https://piswap362.github.io/Friends/" class="menu-btn"><i class="fas fa-user-friends"></i> Friends</a>
-        <a href="https://piswap362.github.io/Wallet/" class="menu-btn"><i class="fas fa-wallet"></i> Wallet</a>
+        <a href="https://piswap362.github.io/PiSwap_Home/" class="menu-btn"><i class="fas fa-home"></i> Home</a>
+        <a href="https://piswap362.github.io/PiSwap_tasks/" class="menu-btn active"><i class="fas fa-tasks"></i> Tasks</a>
+        <a href="https://piswap362.github.io/PiSwap_Friends/" class="menu-btn"><i class="fas fa-user-friends"></i> Friends</a>
+        <a href="https://piswap362.github.io/PiSwap_Wallet/" class="menu-btn"><i class="fas fa-wallet"></i> Wallet</a>
     </div>
 
     <script>
+        // Initialize tasks and points
         document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll("button[data-task]").forEach(button => {
-                let task = button.getAttribute("data-task");
-                if (localStorage.getItem(task) === "completed") {
-                    button.innerText = "Claimed!";
-                    button.disabled = true;
-                }
-            });
+            updatePointsDisplay();
+            initializeTasks();
         });
 
-        function startTask(button) {
-            let task = button.getAttribute("data-task");
+        function updatePointsDisplay() {
+            let points = parseFloat(localStorage.getItem("pisPoints")) || 0;
+            document.getElementById("pointsDisplay").textContent = points;
+        }
+
+        function initializeTasks() {
+            for (let i = 1; i <= 4; i++) {
+                const taskId = `task${i}`;
+                const progressKey = `${taskId}_progress`;
+                const completedKey = `${taskId}_completed`;
+                const lastCompletedKey = `${taskId}_lastCompleted`;
+                
+                // Check if task was completed in the last 24 hours
+                const lastCompleted = parseInt(localStorage.getItem(lastCompletedKey)) || 0;
+                const now = Date.now();
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+                
+                if (lastCompleted > 0 && (now - lastCompleted) < twentyFourHours) {
+                    // Task completed recently, show as completed
+                    markTaskCompleted(taskId);
+                } else if (localStorage.getItem(completedKey) === "true") {
+                    // Reset task if 24 hours have passed
+                    localStorage.removeItem(completedKey);
+                    localStorage.removeItem(progressKey);
+                    localStorage.removeItem(lastCompletedKey);
+                    resetTaskUI(taskId);
+                } else {
+                    // Load progress if exists
+                    const progress = parseInt(localStorage.getItem(progressKey)) || 0;
+                    if (progress > 0) {
+                        updateTaskProgress(taskId, progress);
+                    }
+                }
+            }
+        }
+
+        function resetTaskUI(taskId) {
+            const taskElement = document.getElementById(taskId);
+            if (taskElement) {
+                taskElement.classList.remove("completed");
+                const button = taskElement.querySelector("button");
+                if (button) {
+                    button.innerText = "Watch Ad";
+                    button.disabled = false;
+                    button.onclick = function() { startTask(taskId); };
+                }
+                
+                const progressBar = taskElement.querySelector(".progress-bar");
+                const progressText = taskElement.querySelector(".progress-text");
+                const taskTitle = taskElement.querySelector(".task-title");
+                
+                if (progressBar) progressBar.style.width = "0%";
+                if (progressText) progressText.textContent = "0/3 ads watched";
+                if (taskTitle) taskTitle.innerHTML = `<i class="fas fa-ad"></i> Watch Ads (1/3)`;
+            }
+        }
+
+        function startTask(taskId) {
+            const taskElement = document.getElementById(taskId);
+            if (!taskElement) return;
+            
+            const button = taskElement.querySelector("button");
+            if (!button) return;
+            
+            // Disable the button immediately
             button.disabled = true;
-            button.innerText = "Waiting...";
+            button.innerText = "Loading ad...";
+            
+            // Simulate ad loading (in a real app, this would load an actual ad)
             setTimeout(() => {
-                button.innerText = "Claim";
-                button.disabled = false;
-                button.onclick = function () { claimPoints(this, task); };
+                // Show the ad (simulated)
+                showAd(taskId);
+            }, 1500);
+        }
+
+        function showAd(taskId) {
+            // In a real app, this would display an actual ad
+            // For this demo, we'll simulate watching an ad
+            
+            const taskElement = document.getElementById(taskId);
+            if (!taskElement) return;
+            
+            const button = taskElement.querySelector("button");
+            if (!button) return;
+            
+            button.innerText = "Watching ad...";
+            
+            // Simulate 5 seconds of ad watching
+            setTimeout(() => {
+                completeAdView(taskId);
             }, 5000);
         }
 
-        function claimPoints(button, task) {
-            let points = parseInt(localStorage.getItem("walletPoints")) || 0;
-            points += 5;
-            localStorage.setItem("walletPoints", points);
-            localStorage.setItem(task, "completed");
-            button.innerText = "Claimed!";
-            button.disabled = true;
+        function completeAdView(taskId) {
+            const progressKey = `${taskId}_progress`;
+            const completedKey = `${taskId}_completed`;
+            const lastCompletedKey = `${taskId}_lastCompleted`;
+            
+            // Get current progress
+            let progress = parseInt(localStorage.getItem(progressKey)) || 0;
+            progress += 1;
+            
+            // Update progress in storage
+            localStorage.setItem(progressKey, progress.toString());
+            
+            // Update UI
+            updateTaskProgress(taskId, progress);
+            
+            // Check if task is complete (3 ads watched)
+            if (progress >= 3) {
+                localStorage.setItem(completedKey, "true");
+                localStorage.setItem(lastCompletedKey, Date.now().toString());
+                markTaskCompleted(taskId);
+            }
+        }
+
+        function updateTaskProgress(taskId, progress) {
+            const taskElement = document.getElementById(taskId);
+            if (!taskElement) return;
+            
+            const progressBar = taskElement.querySelector(".progress-bar");
+            const progressText = taskElement.querySelector(".progress-text");
+            const taskTitle = taskElement.querySelector(".task-title");
+            const button = taskElement.querySelector("button");
+            
+            // Calculate percentage
+            const percent = (progress / 3) * 100;
+            
+            // Update progress bar
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            
+            // Update progress text
+            if (progressText) progressText.textContent = `${progress}/3 ads watched`;
+            
+            // Update task title
+            if (taskTitle) taskTitle.innerHTML = `<i class="fas fa-ad"></i> Watch Ads (${progress}/3)`;
+            
+            // Reset button for next ad or show Claim if completed
+            if (button) {
+                if (progress >= 3) {
+                    button.innerText = "Claim 20 Pis";
+                    button.onclick = function() { claimReward(taskId); };
+                } else {
+                    button.innerText = "Watch Ad";
+                    button.onclick = function() { startTask(taskId); };
+                }
+                button.disabled = false;
+            }
+        }
+
+        function claimReward(taskId) {
+            const completedKey = `${taskId}_completed`;
+            
+            // Check if task is actually completed
+            if (localStorage.getItem(completedKey) !== "true") return;
+            
+            // Add points
+            let points = parseFloat(localStorage.getItem("pisPoints")) || 0;
+            points += 20;
+            localStorage.setItem("pisPoints", points.toString());
+            updatePointsDisplay();
+            
+            // Mark task as claimed
+            const taskElement = document.getElementById(taskId);
+            if (taskElement) {
+                const button = taskElement.querySelector("button");
+                if (button) {
+                    button.innerText = "Claimed!";
+                    button.disabled = true;
+                }
+                
+                // Create floating +20 points animation
+                const pointsFloat = document.createElement("div");
+                pointsFloat.className = "floating-points";
+                pointsFloat.textContent = "+20 Pis";
+                taskElement.appendChild(pointsFloat);
+                
+                setTimeout(() => {
+                    pointsFloat.remove();
+                }, 1000);
+            }
+        }
+
+        function markTaskCompleted(taskId) {
+            const taskElement = document.getElementById(taskId);
+            if (taskElement) {
+                taskElement.classList.add("completed");
+                const button = taskElement.querySelector("button");
+                if (button) {
+                    button.innerText = "Claim 20 Pis";
+                    button.onclick = function() { claimReward(taskId); };
+                    button.disabled = false;
+                }
+                
+                // Update progress to show 3/3
+                updateTaskProgress(taskId, 3);
+            }
         }
     </script>
 </body>
