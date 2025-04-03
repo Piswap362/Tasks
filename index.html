@@ -271,61 +271,12 @@
             display: inline-block;
         }
         
-        /* Unity Ads Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        
-        .modal-content {
-            background: var(--pi-dark);
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            border: 1px solid var(--pi-primary);
-        }
-        
-        .modal-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: var(--text-light);
-            font-size: 20px;
-            cursor: pointer;
-        }
-        
-        #unityAdContainer {
-            width: 100%;
-            height: 300px;
-            margin: 15px 0;
-            background: rgba(0, 0, 0, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        
-        .ad-loading {
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        
         .error-message {
             color: #ff6b6b;
-            margin-top: 10px;
+            margin-top: 5px;
+            font-size: 12px;
             font-weight: bold;
+            display: none;
         }
     </style>
 </head>
@@ -353,6 +304,7 @@
                 </div>
                 <div class="progress-text" id="progressText1">0/3 ads watched</div>
                 <button onclick="startUnityAd('task1')">Watch Ad</button>
+                <div class="error-message" id="adError1"></div>
                 <div class="cooldown-timer" id="cooldown1"></div>
                 <div class="claimed-badge" id="claimedBadge1" style="display: none;">Claimed!</div>
             </div>
@@ -423,32 +375,19 @@
         <a href="https://piswap362.github.io/Wallet/" class="menu-btn"><i class="fas fa-wallet"></i> Wallet</a>
     </div>
 
-    <!-- Unity Ads Modal -->
-    <div id="unityAdModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeUnityAdModal()">&times;</button>
-            <h3>Watch Video Ad</h3>
-            <p>Please watch the full video to earn your reward</p>
-            <div id="unityAdContainer">
-                <i class="fas fa-spinner fa-spin fa-2x"></i>
-                <p class="ad-loading">Loading advertisement...</p>
-            </div>
-            <p id="adStatusText">The ad will start shortly</p>
-            <p id="errorMessage" class="error-message" style="display: none;"></p>
-        </div>
-    </div>
-
     <script>
         // Unity Ads configuration
         const unityAdsConfig = {
             gameId: '5827423',
-            placementId: 'rewardedVideo',
-            testMode: false
+            placementId: 'Rewarded_Android', // تغيير إلى معرف الإعلان الصحيح
+            testMode: true // تفعيل وضع الاختبار مؤقتاً
         };
         
         // Current task being processed
         let currentAdTaskId = null;
         let adStarted = false;
+        let adTimeout = null;
+        let isUnityInitialized = false;
         
         // Initialize tasks and points
         document.addEventListener("DOMContentLoaded", function() {
@@ -457,10 +396,26 @@
             startCooldownTimers();
             
             // Initialize Unity Ads
-            if (typeof UnityAds !== 'undefined') {
-                UnityAds.init(unityAdsConfig.gameId, unityAdsConfig.testMode, false);
-            }
+            initializeUnityAds();
         });
+
+        function initializeUnityAds() {
+            if (typeof UnityAds !== 'undefined') {
+                UnityAds.init(unityAdsConfig.gameId, unityAdsConfig.testMode, false, {
+                    onInitialized: () => {
+                        console.log('Unity Ads initialized successfully');
+                        isUnityInitialized = true;
+                    },
+                    onFailed: (error) => {
+                        console.error('Unity Ads initialization failed:', error);
+                        isUnityInitialized = false;
+                    }
+                });
+            } else {
+                console.error('Unity Ads SDK not loaded');
+                isUnityInitialized = false;
+            }
+        }
 
         function updatePointsDisplay() {
             let points = parseFloat(localStorage.getItem("pisPoints")) || 0;
@@ -536,6 +491,7 @@
             const taskTitle = taskElement.querySelector(".task-title");
             const cooldownTimer = document.getElementById(`cooldown${taskId.slice(4)}`);
             const claimedBadge = document.getElementById(`claimedBadge${taskId.slice(4)}`);
+            const errorMessage = document.getElementById(`adError${taskId.slice(4)}`);
             
             if (progressBar) progressBar.style.width = "0%";
             if (progressText) {
@@ -560,6 +516,10 @@
             
             if (cooldownTimer) cooldownTimer.textContent = "";
             if (claimedBadge) claimedBadge.style.display = "none";
+            if (errorMessage) {
+                errorMessage.textContent = "";
+                errorMessage.style.display = "none";
+            }
         }
 
         function startUnityAd(taskId) {
@@ -568,73 +528,82 @@
             if (!taskElement) return;
             
             const button = taskElement.querySelector("button");
-            if (!button) return;
+            const errorElement = document.getElementById(`adError${taskId.slice(4)}`);
+            if (!button || !errorElement) return;
             
+            // Reset error message
+            errorElement.textContent = "";
+            errorElement.style.display = "none";
+            
+            // Check if Unity Ads is initialized
+            if (!isUnityInitialized) {
+                showAdError(taskId, "Ad service not ready. Please try again later.");
+                return;
+            }
+            
+            // Disable button and show loading state
             button.disabled = true;
             button.innerText = "Loading ad...";
             adStarted = false;
             
-            // Show the Unity Ads modal
-            document.getElementById('unityAdModal').style.display = 'flex';
-            document.getElementById('adStatusText').textContent = 'Loading advertisement...';
-            document.getElementById('errorMessage').style.display = 'none';
-            
-            if (typeof UnityAds !== 'undefined') {
-                UnityAds.load(unityAdsConfig.placementId, {
-                    load: function(placementId) {
-                        console.log('Ad loaded:', placementId);
-                        document.getElementById('adStatusText').textContent = 'Ad loaded. Starting...';
-                        
-                        // Show the ad
-                        UnityAds.show(unityAdsConfig.placementId, {
-                            show: function(placementId) {
-                                console.log('Ad showing:', placementId);
-                                adStarted = true; // Mark ad as actually started
-                                document.getElementById('adStatusText').textContent = 'Ad playing. Please watch...';
-                            },
-                            complete: function(placementId) {
-                                if (adStarted) { // Only count if ad actually started
-                                    console.log('Ad completed:', placementId);
-                                    document.getElementById('adStatusText').textContent = 'Ad completed. Thank you!';
-                                    completeAdView(currentAdTaskId);
-                                    setTimeout(closeUnityAdModal, 1500);
-                                } else {
-                                    showError("Ad not properly started. Please try again.");
-                                    resetTaskButton(currentAdTaskId);
-                                    setTimeout(closeUnityAdModal, 2000);
-                                }
-                            },
-                            fail: function(placementId, error, message) {
-                                console.log('Ad failed:', placementId, error, message);
-                                showError("Error: Ad failed to play. Please try again.");
-                                setTimeout(closeUnityAdModal, 2000);
-                                resetTaskButton(currentAdTaskId);
-                            }
-                        });
-                    },
-                    fail: function(placementId, error, message) {
-                        console.log('Ad load failed:', placementId, error, message);
-                        showError("Error: Ad failed to load. Please try again.");
-                        setTimeout(closeUnityAdModal, 2000);
-                        resetTaskButton(currentAdTaskId);
-                    }
-                });
-            } else {
-                console.log('Unity Ads not available');
-                showError("Error: Ad service not available. Please try again later.");
-                setTimeout(closeUnityAdModal, 2000);
-                resetTaskButton(currentAdTaskId);
+            // Clear any existing timeout
+            if (adTimeout) {
+                clearTimeout(adTimeout);
             }
+            
+            // Set timeout for 30 seconds
+            adTimeout = setTimeout(function() {
+                if (!adStarted) {
+                    showAdError(taskId, "Ad loading timed out. Please try again.");
+                    resetTaskButton(taskId);
+                }
+            }, 30000);
+            
+            // First check if ad is ready
+            UnityAds.isReady(unityAdsConfig.placementId, {
+                onReady: (placementId) => {
+                    console.log('Ad is ready to show:', placementId);
+                    
+                    // Show the ad
+                    UnityAds.show(unityAdsConfig.placementId, {
+                        show: function(placementId) {
+                            console.log('Ad showing:', placementId);
+                            adStarted = true;
+                            clearTimeout(adTimeout);
+                            button.innerText = "Watching ad...";
+                        },
+                        complete: function(placementId) {
+                            if (adStarted) {
+                                console.log('Ad completed:', placementId);
+                                completeAdView(currentAdTaskId);
+                                resetTaskButton(currentAdTaskId);
+                            } else {
+                                showAdError(taskId, "Ad did not start properly. Please try again.");
+                                resetTaskButton(taskId);
+                            }
+                        },
+                        fail: function(placementId, error, message) {
+                            console.log('Ad failed:', placementId, error, message);
+                            showAdError(taskId, "Ad failed to play: " + message);
+                            resetTaskButton(taskId);
+                        }
+                    });
+                },
+                onFailed: (placementId, error, message) => {
+                    console.log('Ad not ready:', placementId, error, message);
+                    showAdError(taskId, "Ad not ready: " + message);
+                    resetTaskButton(taskId);
+                }
+            });
         }
 
-        function showError(message) {
-            const errorElement = document.getElementById('errorMessage');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
-
-        function closeUnityAdModal() {
-            document.getElementById('unityAdModal').style.display = 'none';
+        function showAdError(taskId, message) {
+            const errorElement = document.getElementById(`adError${taskId.slice(4)}`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = "block";
+            }
+            console.error('Ad Error:', message);
         }
 
         function resetTaskButton(taskId) {
@@ -646,6 +615,12 @@
                 button.innerText = "Watch Ad";
                 button.disabled = false;
                 button.onclick = function() { startUnityAd(taskId); };
+            }
+            
+            // Clear timeout if it exists
+            if (adTimeout) {
+                clearTimeout(adTimeout);
+                adTimeout = null;
             }
         }
 
